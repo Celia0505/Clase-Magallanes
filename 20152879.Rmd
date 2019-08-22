@@ -1,0 +1,159 @@
+Cargar datos:
+```{r}
+data="PAVIMENTANDO.sav"
+
+
+library(foreign) 
+pavimentando=read.spss(data, to.data.frame=T, use.value.labels = F) 
+head(pavimentando)
+```
+
+###Variable dependiente
+```{r}
+str(pavimentando$apropiaciondolar)
+```
+
+```{r}
+summary(pavimentando$apropiaciondolar)
+```
+a algún municipio se le dio 132 millones y a otros no se les dio nada
+
+```{r}
+hist(pavimentando$apropiaciondolar)
+```
+
+```{r}
+nrow(pavimentando[pavimentando$apropiaciondolar== 0,])
+```
+cada fila es un caso, cuántos tienen cero? por eso el doble ==, son 600 que tiene cero.
+
+###variables independientes
+
+```{r}
+str(pavimentando$priorizado)
+```
+
+
+dos tipos de factores, el simple para variables nominales, no tiene una jerarquía y el ordenado (ordinales, se debe indicar que es ordenado o R lo asumirá como simple)
+
+```{r}
+pavimentando$priorizado = factor(pavimentando$priorizado, labels=c("No", "Si"))
+str(pavimentando$priorizado) #comprobamos
+```
+siempre va en orden de menor a mayor, entonces primero va el cero, entonces primeor es el No, municipios que no estaban priorizados para el presupuesto vial. 
+
+```{r}
+table(pavimentando$priorizado)
+prop.table(table(pavimentando$priorizado))*100
+```
+
+quiero la relación, tengo una variable numérica (asignación presupuestal) y otra dicotómica (si es priorizado o no el municipio), se realiza prueba T. ~ este simbolo junta dos variables. Primero la númerica y luego va la dicotómica. (virgulilla)
+
+```{r}
+pavimentando2=pavimentando[!pavimentando$apropiaciondolar==0,]
+```
+ se crea una nueva data, el signo de excalmación señala "dame lo contrario a lo que pido"
+contiene a los que no tienen cero, a esos se les guarda, == este objeto es igual a, el solo = es solo señalar. 
+
+```{r}
+t.test(pavimentando2$apropiaciondolar~pavimentando2$priorizado,var.equal = T)
+```
+
+p-value es 0.9961 es mayor que 0.5, no hay una relación significativa estadísticamente. Se puede agregar nivel de confianza (conf.level), sin embargo, en este caso no afecta en nada agregarlo. 
+Con la data cambiada , se muestra que se les da mayor presupuesto vial a los no priorizados, relación significativa estadísticamente. 
+
+###Mecanismos clientelistas
+
+```{r}
+str(pavimentando$pctopo)
+```
+pc topo es una variable numérica 
+
+```{r}
+summary(pavimentando$pctopo)
+```
+
+```{r}
+cor.test(pavimentando$apropiaciondolar, pavimentando$pctopo)
+```
+para medir la relación entre dos variables numéricas se usa la correlación de pearson, indica si la relación es positiva o negativa. Aquí la correlación es de -0.055p, esta es débil porque está cerca del cero. Además es negativa. Va de -1 a 1, mientras más cerca al cero no hay relación o es una relación débil. 
+
+```{r}
+str(pavimentando$uribista)
+```
+
+```{r}
+pavimentando$uribista = factor(pavimentando$uribista, labels=c("No", "Si"))
+str(pavimentando$uribista) #comprobamos
+```
+
+se le está asignando una etiqueta que no tenía. 
+
+```{r}
+table = prop.table(table(pavimentando$uribista))*100
+barplot(table, ylab="% municipios", col=c("red","blue"), xlab="uribista", main="Porcentaje municipios uribistas", ylim=c(0,100))
+```
+
+ylim, el límite del eje y
+
+```{r}
+t.test(pavimentando$apropiaciondolar~pavimentando$uribista,var.equal = T)
+```
+
+p-value señala que hay una relación significativa, y los grupos no uribistas reciben más presupuesto. 
+
+###Consejos Comunales
+
+```{r}
+str(pavimentando$consejocomunal)
+```
+
+está como numerico, se debe transformar a factor, para ello se pone etiquetas
+
+```{r}
+pavimentando$consejocomunal= factor(pavimentando$consejocomunal, labels=c("No", "Si"))
+str(pavimentando$consejocomunal) #comprobamos
+```
+
+```{r}
+table(pavimentando$consejocomunal)
+prop.table(table(pavimentando$consejocomunal))*100
+```
+
+table para saber cuantos han tenido o no el consejo municipal
+
+```{r}
+t.test(pavimentando$apropiaciondolar~pavimentando$consejocomunal,var.equal = T)
+```
+
+e-15 señala que debes correr como 15 ceros para llegar al cero, es decir que es una relación muy significativa. 
+
+```{r}
+str(pavimentando$ejecucion)
+```
+
+```{r}
+pavimentando$ejecucion= factor(pavimentando$ejecucion, labels=c("No", "Si"))
+str(pavimentando$ejecucion) #comprobamos
+```
+
+```{r}
+table(pavimentando$ejecucion)
+prop.table(table(pavimentando$ejecucion))*100
+```
+
+```{r}
+t.test(pavimentando$apropiaciondolar~pavimentando$ejecucion,var.equal = T)
+```
+
+###Variables de control, el número de habitantes
+ambas son variables numéricas, corresponde luego a hacer una regresión lineal, solo para dependientes numéricas, y para independientes de cualquier forma.
+
+```{r}
+modelo1=lm(apropiaciondolar~.,data=pavimentando)
+summary(modelo1)
+```
+```{r}
+confint(modelo1)
+```
+
